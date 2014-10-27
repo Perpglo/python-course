@@ -1,0 +1,120 @@
+# template for "Stopwatch: The Game"
+
+#import module
+import simplegui
+
+# define global variables
+time = 0
+interval = 100
+tries1 = 0
+success1 = 0
+started = None
+success_rate1 = 0.0
+tries2 = 0
+success2 = 0
+success_rate2 = 0.0
+
+
+# define helper function format that converts time
+# in tenths of seconds into formatted string A:BC.D
+def format(t):
+    global time
+    #do calculation
+    minutes = time//600
+    sec1 = time//10%60//10
+    sec2 = time//10%60%10
+    ms = time%100%10
+    #return the formatted string
+    return str(minutes) + ":" + str(sec1) + str(sec2) + "." + str(ms)
+    
+# define event handlers for buttons; "Start", "Stop", "Reset"
+def start():
+    global started
+    timer.start()
+    started = True
+       
+def key_space_down(key):
+    global tries1, tries2, time, success1, success2, started, success_rate1, success_rate2
+    timer.stop()
+    #Check to see if number is a whole second and increment
+    #tries, success accordingly.  
+    if key == simplegui.KEY_MAP['space']:
+        if time % 10 == 0 and started == True:
+            tries1 += 1
+            success1 += 1
+            float_success1 = float(success1)
+            success_rate1 = round(float_success1/tries1*100)
+            started = False        
+        elif time % 10 != 0 and started == True:
+            tries1 += 1
+            float_success1 = float(success1)
+            success_rate1 = round(float_success1/tries1*100)
+            started = False
+        else:
+            return tries1, success1, success_rate1
+    if key == simplegui.KEY_MAP['up']:
+        if time % 10 == 0 and started == True:
+            tries2 += 1
+            success2 += 1
+            float_success2 = float(success2)
+            success_rate2 = round(float_success2/tries2*100)
+            started = False        
+        elif time % 10 != 0 and started == True:
+            tries2 += 1
+            float_success2 = float(success2)
+            success_rate2 = round(float_success2/tries2*100)
+            started = False
+        else:
+            return tries2, success2, success_rate2 
+    
+def reset():
+    global time, tries1, success1, success_rate1, tries2, success2, success_rate2
+    timer.stop()
+    time = 0
+    tries1 = 0
+    success1 = 0
+    success_rate1 = 0.0
+    tries2 = 0
+    success2 = 0
+    success_rate2 = 0.0
+    format(time)
+    
+# define event handler for timer with 0.1 sec interval
+def timer():
+    global time 
+    time += 1
+    format(time)
+            
+# define draw handler
+def draw(canvas):
+    global time
+    if time != 0000 and not timer.is_running():
+        if time % 10 == 0 and str(time) != "0:00.0":
+            canvas.draw_text("Nice :) ", (10, 80), 20, "yellow")
+        else:
+            canvas.draw_text("Try again", (10, 80), 20, "yellow")
+    score1 = "Player 1 - Success: " + str(success1) + "   " + "Tries: " + str(tries1)
+    score2 = "Player 2 - Success: " + str(success2) + "   " + "Tries: " + str(tries2)
+    image = simplegui.load_image('http://etc-mysitemyway.s3.amazonaws.com/icons/legacy-previews/icons/3d-transparent-glass-icons-business/075965-3d-transparent-glass-icon-business-clock.png')
+    canvas.draw_text(str(format(time)), (60, 130), 48, "white")
+    canvas.draw_text(score1, (5, 20), 20, "red")
+    canvas.draw_text(score2, (5, 180), 20, "black")
+    canvas.draw_text("Success rate: " + str(success_rate1) + '%', (5, 45), 20, "red")
+    canvas.draw_text("Success rate: " + str(success_rate2) + '%', (5, 200), 20, "black")
+    canvas.draw_image(image, (500/ 2, 500/2), (500, 500), (250, 90), (100,100))
+    
+    
+# create frame
+frame = simplegui.create_frame("Stopwatch: The Game", 300, 225)
+frame.set_canvas_background("silver")
+
+# register event handlers
+timer = simplegui.create_timer(interval, timer)
+frame.set_draw_handler(draw)
+frame.add_button("Start", start, 200)
+frame.set_keydown_handler(key_space_down)
+frame.add_button("Reset", reset, 200)
+frame.add_label(" ")
+frame.add_label("Stop the time on a whole second...") 
+frame.add_label("Click start to start the game. Player 1 hit space; Player 2 hit up!")
+frame.start()
