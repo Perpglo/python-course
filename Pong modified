@@ -1,0 +1,181 @@
+# Modified implementation of classic arcade game Pong
+
+#import modules
+import simplegui, random
+
+# initialize globals - pos and vel encode vertical info for paddles
+WIDTH = 600
+HEIGHT = 400       
+BALL_RADIUS = 20
+PAD_WIDTH = 8
+PAD_HEIGHT = 80
+HALF_PAD_WIDTH = PAD_WIDTH / 2
+HALF_PAD_HEIGHT = PAD_HEIGHT / 2
+LEFT = False
+RIGHT = True
+paddle1_pos_y1 = HEIGHT / 2 - HALF_PAD_HEIGHT 
+paddle2_pos_y1 = HEIGHT / 2 - HALF_PAD_HEIGHT
+paddle1_pos_y2 = HEIGHT / 2 + HALF_PAD_HEIGHT 
+paddle2_pos_y2 = HEIGHT / 2 + HALF_PAD_HEIGHT
+paddle1_vel = 0
+paddle2_vel = 0
+score1 = 0
+score2 = 0
+message = ''
+
+# initialize ball_pos and ball_vel for new ball in middle of table
+ball_pos = [WIDTH / 2, HEIGHT / 2]
+ball_vel = [0,  0]
+
+# if direction is RIGHT, the ball's velocity is upper right, else upper left
+def spawn_ball(direction):
+    global ball_pos, ball_vel # these are vectors stored as lists
+    # Spawn a ball. Update ball position
+    if direction == LEFT:
+        ball_pos = [WIDTH / 2, HEIGHT / 2]
+        ball_vel = [-random.randrange(2, 4), -random.randrange(1, 3)]
+    elif direction == RIGHT:
+        ball_pos = [WIDTH / 2, HEIGHT / 2]
+        ball_vel = [random.randrange(2, 4), -random.randrange(1, 3)]
+       
+             
+# define event handlers
+def new_game():
+    global paddle1_vel, paddle2_vel  # these are numbers
+    global message, score1, score2  # these are ints
+    score1 = 0
+    score2 = 0
+    message = ''
+    spawn_ball(LEFT)
+              
+    
+def draw(canvas):
+    global score1, score2, paddle1_pos, paddle2_pos, ball_pos, ball_vel, paddle1_vel, paddle2_vel
+    global message, paddle1_pos_y1, paddle1_pos_y2, paddle2_pos_y1, paddle2_pos_y2     
+    # draw mid line and gutters
+    
+    nebula_image = simplegui.load_image("http://commondatastorage.googleapis.com/codeskulptor-assets/lathrop/nebula_blue.png")
+    canvas.draw_image(nebula_image, [800 / 2, 600 / 2] , [800, 600] , [WIDTH / 2, HEIGHT / 2], [WIDTH, HEIGHT])
+
+
+    canvas.draw_line([WIDTH / 2, 0],[WIDTH / 2, HEIGHT], 1, "White")
+    canvas.draw_line([PAD_WIDTH, 0],[PAD_WIDTH, HEIGHT], 1, "White")
+    canvas.draw_line([WIDTH - PAD_WIDTH, 0],[WIDTH - PAD_WIDTH, HEIGHT], 1, "White")
+        
+    # update ball
+    ball_pos[0] += ball_vel[0]
+    ball_pos[1] += ball_vel[1]  
+    
+    # update paddle's vertical position, keep paddle on the screen
+    paddle1_pos_y1 += paddle1_vel
+    paddle1_pos_y2 += paddle1_vel
+    paddle2_pos_y1 += paddle2_vel
+    paddle2_pos_y2 += paddle2_vel
+    
+    if paddle1_pos_y1 <= 0:  
+        paddle1_vel = -paddle1_vel
+    elif paddle1_pos_y2 >= HEIGHT - 1:
+        paddle1_vel = -paddle1_vel      
+    
+    if paddle2_pos_y1 <= 0:  
+        paddle2_vel = -paddle2_vel
+    elif paddle2_pos_y2 >= HEIGHT - 1:
+        paddle2_vel = -paddle2_vel        
+   
+        #what if it touches gutter - score a point and spawn the ball accordingly
+    if ball_pos[0] <= 0 + BALL_RADIUS:	#left
+        if ball_pos[1] >= paddle1_pos_y1 and ball_pos[1] <= paddle1_pos_y2:
+            ball_vel[0] = -ball_vel[0]*1.1
+            ball_vel[1] = -ball_vel[1]*1.1
+        else:
+            spawn_ball(RIGHT)
+            score1 += 1
+    elif ball_pos[0] >= (WIDTH-1) - BALL_RADIUS: #right
+        if ball_pos[1] >= paddle2_pos_y1 and ball_pos[1] <= paddle2_pos_y2:
+            ball_vel[0] = -ball_vel[0]*1.1
+            ball_vel[1] = -ball_vel[1]*1.1
+        else:
+            spawn_ball(LEFT)
+            score2 += 1
+
+            #bounce off top and bottom    
+    if ball_pos[1] <= BALL_RADIUS:
+        ball_vel[1] = -ball_vel[1]
+    elif ball_pos[1] >= (HEIGHT - 1) - BALL_RADIUS:
+        ball_vel[1] = -ball_vel[1]
+    
+    #changes the way score looks depending on who is winning
+    if score1>score2:
+        canvas.draw_text(str(score1), (450, 80), 55, "red")
+        canvas.draw_text(":", (300, 80), 50, "white")
+        canvas.draw_text(str(score2), (150, 80), 48, "white")
+    elif score2>score1:
+        canvas.draw_text(str(score2), (150, 80), 55, "blue")
+        canvas.draw_text(":", (300, 80), 50, "white")
+        canvas.draw_text(str(score1), (450, 80), 48, "white")
+    else:
+        canvas.draw_text(str(score1), (450, 80), 48, "white")
+        canvas.draw_text(":", (300, 80), 50, "white")
+        canvas.draw_text(str(score2), (150, 80), 48, "white")
+    
+    #determines a winner
+    if score1 == 10:
+        ball_pos = [WIDTH / 2, HEIGHT / 2]
+        ball_vel = [0,  0]
+        message = "Player 2 wins! Click restart!"
+    elif score2 == 10:
+        ball_pos = [WIDTH / 2, HEIGHT / 2]
+        ball_vel = [0,  0]
+        message = "Player 1 wins! Click restart!"
+    # draw ball
+    canvas.draw_circle(ball_pos, BALL_RADIUS, 2, "white", "White")
+
+   # draw paddles
+    canvas.draw_line([HALF_PAD_WIDTH,  paddle1_pos_y1], [HALF_PAD_WIDTH, paddle1_pos_y2], PAD_WIDTH, "White")
+    canvas.draw_line([WIDTH - HALF_PAD_WIDTH,  paddle2_pos_y1], [WIDTH - HALF_PAD_WIDTH,  paddle2_pos_y2], PAD_WIDTH, "White")
+    
+    #draw winning message
+    canvas.draw_text(message, (10, 150), 50, "red")
+    
+def keydown(key):
+    global paddle1_vel, paddle2_vel
+    if key==simplegui.KEY_MAP["down"]:
+        paddle2_vel += 3
+    if key==simplegui.KEY_MAP["up"]:
+        paddle2_vel -= 3
+    if key==simplegui.KEY_MAP["w"]:
+        paddle1_vel -= 3
+    elif key==simplegui.KEY_MAP["s"]:
+        paddle1_vel += 3
+           
+def keyup(key):
+    global paddle1_vel, paddle2_vel
+    if key==simplegui.KEY_MAP["down"] or key==simplegui.KEY_MAP["up"]:
+        paddle2_vel = 0
+    
+    if key==simplegui.KEY_MAP["w"] or key==simplegui.KEY_MAP["s"]:
+        paddle1_vel = 0
+
+def restart():
+    global score1, score2
+    score1 = 0
+    score2 = 0
+    message = ''
+    new_game()
+
+# create frame
+frame = simplegui.create_frame("Pong", WIDTH, HEIGHT)
+frame.set_draw_handler(draw)
+frame.set_keydown_handler(keydown)
+frame.set_keyup_handler(keyup)
+frame.add_button("Restart", restart, 100)
+frame.add_label('')
+frame.add_label('')
+frame.add_label("Player 1 hit 'W' to move up; 'S' to move down!")
+frame.add_label('')
+frame.add_label("Player 2 hit UP arrow to move up; DOWN arrow to move down!")
+frame.add_label('')
+frame.add_label("First to gain 10 points is the winner!")
+# start frame
+new_game()
+frame.start()
